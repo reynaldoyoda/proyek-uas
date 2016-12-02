@@ -1,4 +1,4 @@
-import sys, pygame, config, random, time
+import sys, pygame, config, random, time, titlescreen, shop
 import player, enemy, board, bomb, highscore, music
 from pygame.locals import *
 import os,sys
@@ -17,6 +17,8 @@ class Game:
 	time = 5*60+1
 	timeplus = False
 	armor = False
+	cheatOn = False
+	char = 1
 
 	# multiplayer data
 	tcpData = []
@@ -193,16 +195,19 @@ class Game:
 		bomb = pygame.image.load(self.c.IMAGE_PATH + "screen/bomb.png").convert()
 		power = pygame.image.load(self.c.IMAGE_PATH + "screen/power.png").convert()
 		clock = pygame.image.load(self.c.IMAGE_PATH + "screen/clock.png").convert()
+		shop = pygame.image.load(self.c.IMAGE_PATH + "screen/shop.png").convert()
 
 		self.blit(player,(40,650))
 		self.blit(clock,(365,650))
 		self.blit(bomb,(590,647))
 		self.blit(power,(670,650))
 		self.blit(life,(740,652))
+		self.blit(shop,(170,652))
 
 	def initPlayers(self):
 		if self.mode == self.c.SINGLE:
-			self.user = player.Player("Player 1","p_1_",0,(40,40))
+			#self.user = player.Player("Player 1","p_2_",0,(40,40))
+			self.user = player.Player("Player 1","p_"+str(self.char)+"_",0,(40,40))
 			self.players.append(self.user)
 			self.blit(self.user.image, self.user.position)
 		elif self.mode == self.c.MULTI:
@@ -235,10 +240,10 @@ class Game:
 		while self.gameIsActive:
 			if self.armor == True:
 				armor = pygame.image.load(self.c.IMAGE_PATH + "screen/armor.png").convert()
- 				self.blit(armor,(220,650))
+ 				self.blit(armor,(550,652))
 			elif self.armor == False:
 				armor = pygame.image.load(self.c.IMAGE_PATH + "screen/black.png").convert()
-				self.blit(armor,(220,650))
+				self.blit(armor,(550,652))
 
 			clock.tick(self.c.FPS)
 			self.checkPlayerEnemyCollision()
@@ -270,6 +275,7 @@ class Game:
 							self.sendingData = ["update","bomb",k,self.id]
 						self.deployBomb(self.user)
 					elif k == pygame.K_ESCAPE:
+						titlescreen.Titlescreen()
 						self.fQuit()
 					elif k == pygame.K_UP or k == pygame.K_DOWN or k == pygame.K_LEFT or k == pygame.K_RIGHT:
 						if self.mode == self.c.MULTI:
@@ -278,16 +284,31 @@ class Game:
 						# player's move method
 						point = self.user.movement(k) # next point
 						self.movementHelper(self.user, point)
-					elif k == pygame.K_g: # god mode, cheat ;)
-						self.user.gainPower(self.c.BOMB_UP)
-						self.user.gainPower(self.c.POWER_UP)
-					#elif k == pygame.K_RETURN:
+					elif k == pygame.K_1: # cheat
+						if self.cheatOn == False:
+							self.user.gainPower(10)
+							self.cheatOn = True
+							self.armor = True
+						elif self.cheatOn == True:
+							self.user.gainPower(11)
+							self.cheatOn = False
+							self.armor = False
+					elif k == pygame.K_2:
+						self.victory()
+						#shop.Shop()
 
 				elif event.type == pygame.USEREVENT: # RFCT - change definition
 					self.updateBombs()
 				elif event.type == pygame.USEREVENT+1: #RFCT
 					for e in self.enemies:
-						self.movementHelper(e,e.nextMove())
+						if self.cheatOn == False:
+							self.movementHelper(e,e.nextMove())
+				if event.type == pygame.MOUSEBUTTONDOWN:
+					mx, my = pygame.mouse.get_pos()
+					if my >= 652:
+						if self.user.score >= 300:
+							self.user.gainPower(self.c.POWER_UP)
+							self.user.setScore(-300)
 
 				self.updateDisplayInfo()
 				pygame.display.update()
@@ -417,7 +438,8 @@ class Game:
 						self.resetPlayerPosition(player,True)
 			elif self.armor == True:
 				if player.position == position:
-					self.armor = False
+					if self.cheatOn == False:
+						self.armor = False
 
 		# check if enemy was hit by bomb
 		for enemy in self.enemies:
@@ -436,11 +458,13 @@ class Game:
 					self.resetPlayerPosition(self.user,True)
 			elif self.armor == True:
 				if enemy.position == self.user.position:
-					self.armor = False
+					if self.cheatOn == False:
+						self.armor = False
 
 	def checkWinConditions(self):
 		if self.mode == self.c.SINGLE:
 			if len(self.enemies) == 0:
+				#shop.Shop()
 				self.victory()
 
 	def gameover(self, player):
@@ -457,7 +481,6 @@ class Game:
 
 	def printText(self,text,point):
 		font = pygame.font.Font("lucida.ttf",20)
-	#	font = pygame.font.SysFont("resources/fonts/Lucida Console",26)
 		label = font.render(str(text)+'  ', True, (255,255, 255), (0, 0, 0))
 		textRect = label.get_rect()
 		textRect.x = point[0]
@@ -471,26 +494,28 @@ class Game:
 		if self.level > 6:
 			self.stage += 1
 			self.level = 1
+
 		mp = music.Music()
 		mp.playSound("victory")
 		time.sleep(2)
 
 	def updateTimer(self):
-		self.timer -= 1
-		if self.timeplus == True :
-			self.timer +=20
-			self.timeplus = False
+		if self.cheatOn == False:
+			self.timer -= 1
+			if self.timeplus == True :
+				self.timer +=20
+				self.timeplus = False
 
-		# user lost
-		if self.timer == 0:
-			self.gameover(self.user)
+			# user lost
+			if self.timer == 0:
+				self.gameover(self.user)
 
-		mins = str(int(self.timer/60))
-		secs = str(int(self.timer%60))
+			mins = str(int(self.timer/60))
+			secs = str(int(self.timer%60))
 
-		if len(mins) == 1:
-			mins = "0"+mins
-		if len(secs) == 1:
-			secs = "0"+secs
-		txt = "%s:%s" % (mins,secs)
-		self.printText(txt,(400,653))
+			if len(mins) == 1:
+				mins = "0"+mins
+			if len(secs) == 1:
+				secs = "0"+secs
+			txt = "%s:%s" % (mins,secs)
+			self.printText(txt,(400,653))

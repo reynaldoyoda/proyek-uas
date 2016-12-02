@@ -48,8 +48,12 @@ class Tile(pygame.sprite.Sprite):
 			self.passable = True
 			self.destroyable = False
 		elif self.type == self.c.BRICK:
-			self.passable = False
-			self.destroyable = True
+			if wpass == False:
+				self.passable = False
+				self.destroyable = True
+			elif wpass == True:
+				self.passable = True
+				self.destroyable = True
 		elif self.type == self.c.WALL:
 			self.passable = False
 			self.destroyable = False
@@ -58,11 +62,6 @@ class Tile(pygame.sprite.Sprite):
 			self.destroyable = True
 
 		self.image = pygame.image.load(self.c.IMAGE_PATH + "tiles/" + str(self.type) + ".png").convert()
-
-	def test(self):
-		if self.type == self.c.BRICK:
-			self.passable = True
-			self.destroyable = False
 
 	def destroy(self):
 		if self.powerup != None:

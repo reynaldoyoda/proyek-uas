@@ -1,4 +1,4 @@
-import sys, pygame, config, game, highscore
+import sys, pygame, config, game, highscore, selectchar
 
 class Titlescreen():
 
@@ -59,7 +59,8 @@ class Titlescreen():
 		return False
 
 	def singlePlayer(self):
-		g = game.Game(self.c.SINGLE)
+		#g = game.Game(self.c.SINGLE)
+		g= selectchar.selectChar()
 
 	def multiplayer(self):
 		g = game.Game(self.c.MULTI)

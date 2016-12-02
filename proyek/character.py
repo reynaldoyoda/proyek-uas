@@ -20,8 +20,10 @@ class Character(pygame.sprite.Sprite):
 
 	def getImage(self, direction):
 		imagePath = self.c.IMAGE_PATH + self.imageName + direction + ".png"
+  		#imagePath = self.c.IMAGE_PATH + "players/p_2_" + direction + ".png"
 		self.image = pygame.image.load(imagePath).convert()
-		
+        #self.image = pygame.image.load(self.c.IMAGE_PATH + "tiles/" + str(self.type) + ".png").convert()
+
 	def update(self):
 		print "=D"
 
