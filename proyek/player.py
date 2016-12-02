@@ -1,4 +1,5 @@
-import pygame, character, config, bomb
+import pygame, character, config, bomb, game, tile
+
 
 # RFCT NEEDED
 class Player(character.Character):
@@ -14,7 +15,7 @@ class Player(character.Character):
 		self.c = config.Config()
 		self.id = id
 		self.instance_of = 'player'
-	
+
 	# reset all stats if death is true
 	def reset(self,death):
 		character.Character.reset(self,True)
@@ -33,10 +34,24 @@ class Player(character.Character):
 	def gainPower(self,power):
 		if power == self.c.BOMB_UP:
 			self.currentBomb += 1
-			self.maxBombs += 1
+			if self.maxBombs < 9:
+				self.maxBombs += 1
+		elif power == self.c.LIFE_UP:
+			self.lives += 1
 		elif power == self.c.POWER_UP:
-			self.power += 1
-	
+			if self.power < 9:
+				self.power += 1
+ 		elif power == self.c.POWER_PLUS:
+			if self.power < 9:
+				self.power = 9
+   		elif power == self.c.TIME_UP:
+			game.Game.timeplus = True
+		elif power == self.c.WALL_PASS:
+			tile.wpass = True
+			#tile.Tile.setAttributes()
+		elif power == self.c.ARMOR:
+			game.Game.armor = True
+
 	def setScore(self,score):
 		self.score += score
 		if self.score < 0:

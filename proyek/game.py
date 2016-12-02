@@ -14,9 +14,12 @@ class Game:
 	level = 1
 	firstRun = True
 	exitGame = False
+	time = 5*60+1
+	timeplus = False
+	armor = False
 
 	# multiplayer data
-	tcpData = [] 
+	tcpData = []
 	sendingData = []
 	lastTcpCall = 0
 	pHash = {}
@@ -30,16 +33,16 @@ class Game:
 		pygame.init()
 		self.screen = pygame.display.set_mode((self.c.WIDTH,self.c.HEIGHT),pygame.DOUBLEBUF)
 		pygame.display.set_caption("Bomberman")
-		
+
 		# init preloader / join server
 		if self.mode == self.c.MULTI:
 			preloader = pygame.image.load(self.c.IMAGE_PATH + "loading.png").convert()
 			self.blit(preloader,(0,0))
 			pygame.display.flip()
 			self.joinGame()
-		
+
 		# repeat for multiple levels
-		while not self.exitGame: 
+		while not self.exitGame:
 			self.resetGame()
 			self.clearBackground()
 			self.initGame()
@@ -68,7 +71,7 @@ class Game:
 			self.initMultiUsers()
 			if self.tcpData[-1] == "[SERVER]|START":
 				break
-	
+
 	def getMultiStartPosition(self,id):
 		if id == "1":
 			return (40,40)
@@ -105,7 +108,7 @@ class Game:
 				self.sendingData = ["update",None]
 			self.client.send_data(self.sendingData)
 			self.sendingData = []
-	
+
 	# RFCT
 	# ary[3] = key 			ary[2] = user
 	def manipulateTcpData(self):
@@ -140,11 +143,13 @@ class Game:
 		if self.mode == self.c.SINGLE:
 			self.printText("Level %d-%d" % (self.stage,self.level),(40,15))
 			self.field = board.Board(self.stage, self.level)
-			self.timer = 3*60+1
+			self.timer = self.time
+
 		elif self.mode == self.c.MULTI:
 			self.printText("Multiplayer",(40,15))
 			self.field = board.Board(0,0)
 			self.timer = 5*60+1
+
 
 		self.drawBoard()
 		self.drawInterface()
@@ -156,11 +161,11 @@ class Game:
 			self.initPlayers()
 		else:
 			self.resetPlayerPosition(self.user,False)
-		
+
 		# no enemies in multiplayer
 		if self.mode == self.c.SINGLE:
 			self.initEnemies()
-		
+
 		# music player
 		mp = music.Music()
 		mp.playMusic(self.mode)
@@ -191,11 +196,10 @@ class Game:
 
 		self.blit(player,(40,650))
 		self.blit(clock,(365,650))
-
 		self.blit(bomb,(590,647))
 		self.blit(power,(670,650))
 		self.blit(life,(740,652))
-	
+
 	def initPlayers(self):
 		if self.mode == self.c.SINGLE:
 			self.user = player.Player("Player 1","p_1_",0,(40,40))
@@ -229,8 +233,14 @@ class Game:
 		self.gameIsActive = True
 
 		while self.gameIsActive:
+			if self.armor == True:
+				armor = pygame.image.load(self.c.IMAGE_PATH + "screen/armor.png").convert()
+ 				self.blit(armor,(220,650))
+			elif self.armor == False:
+				armor = pygame.image.load(self.c.IMAGE_PATH + "screen/black.png").convert()
+				self.blit(armor,(220,650))
+
 			clock.tick(self.c.FPS)
-			
 			self.checkPlayerEnemyCollision()
 			self.checkWinConditions()
 
@@ -247,14 +257,14 @@ class Game:
 
 			if cyclicCounter%5 == 1:
 				self.clearExplosion()
-				
+
 			for event in pygame.event.get():
 				if event.type == pygame.QUIT:
-					self.forceQuit()
+					pygame.quit()
+					#self.forceQuit(fQuit)
 				elif event.type == pygame.KEYDOWN:
 					# deploy bomb
 					k = event.key
-
 					if k == pygame.K_SPACE:
 						if self.mode == self.c.MULTI:
 							self.sendingData = ["update","bomb",k,self.id]
@@ -271,6 +281,7 @@ class Game:
 					elif k == pygame.K_g: # god mode, cheat ;)
 						self.user.gainPower(self.c.BOMB_UP)
 						self.user.gainPower(self.c.POWER_UP)
+					#elif k == pygame.K_RETURN:
 
 				elif event.type == pygame.USEREVENT: # RFCT - change definition
 					self.updateBombs()
@@ -280,18 +291,18 @@ class Game:
 
 				self.updateDisplayInfo()
 				pygame.display.update()
-	
+
 	def deployBomb(self,player):
 		b = player.deployBomb() # returns a bomb if available
 		if b != None:
 			tile = self.field.getTile(player.position)
 			tile.bomb = b
 			self.bombs.append(b)
-		
+
 	def blit(self,obj,pos):
 		self.screen.blit(obj,pos)
 	#	pygame.display.flip()
-	
+
 	def movementHelper(self, char, point):
 		nPoint = char.position.move(point)
 
@@ -305,7 +316,7 @@ class Game:
 				tile.destroy()
 				self.blit(tile.getBackground(),nPoint)
 			char.move(point)
-			
+
 			self.blit(char.image, char.position)
 
 			t = self.field.getTile(char.old)
@@ -317,7 +328,7 @@ class Game:
 		for bomb in self.bombs:
 			if bomb.tick() == 0:
 				self.activateBomb(bomb)
-	
+
 	def activateBomb(self,bomb):
 		if not bomb.triggered:
 			bomb.explode()
@@ -335,12 +346,12 @@ class Game:
 		if bomb == None:
 			return
 		else:
-			bomb.triggered = True	
-			self.bombHelper(bomb,'left')	
+			bomb.triggered = True
+			self.bombHelper(bomb,'left')
 			self.bombHelper(bomb,'right')
 			self.bombHelper(bomb,'up')
 			self.bombHelper(bomb,'down')
-	
+
 	# ALGO NEEDS RFCT!!!
 	def bombHelper(self, bomb, direction):
 		if direction == 'right':
@@ -378,12 +389,12 @@ class Game:
 				explosion = pygame.image.load(self.c.IMAGE_PATH + "explosion_c.png").convert()
 				self.blit(explosion,nPoint)
 				self.resetTiles.append(nPoint)
-			
+
 			# check bomb's power, this terminates the recursive loop
 			if int(abs(x)/40) == bomb.range or int(abs(y)/40) == bomb.range:
 				#	print "(x,y) => (" + str(x) + "," + str(y) + ")"
 				break
-	
+
 	def clearExplosion(self):
 		for point in self.resetTiles:
 			t = self.field.getTile(point)
@@ -397,13 +408,17 @@ class Game:
 	def checkPlayerEnemyBombCollision(self, position):
 		# check if player was hit by bomb
 		for player in self.players:
-			if player.position == position:
-				if player.loseLifeAndGameOver():
-					self.gameover(player)
-				else:
-					# if the player gets hit by a blast, reset it's position to the starting position
-					self.resetPlayerPosition(player,True)
-		
+			if self.armor == False:
+				if player.position == position:
+					if player.loseLifeAndGameOver():
+						self.gameover(player)
+					else:
+	                    #if the player gets hit by a blast, reset it's position to the starting position
+						self.resetPlayerPosition(player,True)
+			elif self.armor == True:
+				if player.position == position:
+					self.armor = False
+
 		# check if enemy was hit by bomb
 		for enemy in self.enemies:
 			if enemy.position == position:
@@ -412,13 +427,17 @@ class Game:
 
 	def checkPlayerEnemyCollision(self):
 		for enemy in self.enemies:
-			if enemy.position == self.user.position:
-				# RFCT - code repetition
-				if self.user.loseLifeAndGameOver():
-					self.gameover(self.user)
-				self.user.setScore(-250)
-				self.resetPlayerPosition(self.user,True)
-	
+			if self.armor == False:
+				if enemy.position == self.user.position:
+					# RFCT - code repetition
+					if self.user.loseLifeAndGameOver():
+						self.gameover(self.user)
+					self.user.setScore(-250)
+					self.resetPlayerPosition(self.user,True)
+			elif self.armor == True:
+				if enemy.position == self.user.position:
+					self.armor = False
+
 	def checkWinConditions(self):
 		if self.mode == self.c.SINGLE:
 			if len(self.enemies) == 0:
@@ -430,7 +449,7 @@ class Game:
 			self.highscores.addScore(player.score)
 			self.gameIsActive = False
 			self.exitGame = True
-	
+
 	def fQuit(self):
 		self.gameIsActive = False
 		self.exitGame = True
@@ -441,10 +460,10 @@ class Game:
 	#	font = pygame.font.SysFont("resources/fonts/Lucida Console",26)
 		label = font.render(str(text)+'  ', True, (255,255, 255), (0, 0, 0))
 		textRect = label.get_rect()
-		textRect.x = point[0] 
+		textRect.x = point[0]
 		textRect.y = point[1]
 		self.blit(label, textRect)
-	
+
 	def victory(self):
 		self.gameIsActive = False
 		self.user.setScore(500)
@@ -458,6 +477,9 @@ class Game:
 
 	def updateTimer(self):
 		self.timer -= 1
+		if self.timeplus == True :
+			self.timer +=20
+			self.timeplus = False
 
 		# user lost
 		if self.timer == 0:

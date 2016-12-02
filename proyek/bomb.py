@@ -1,8 +1,7 @@
 import config, pygame, character
-
 class Bomb(pygame.sprite.Sprite):
 	fuse = 3
-	
+
 	def __init__(self,player):
 		pygame.sprite.Sprite.__init__(self)
 		self.c = config.Config()
@@ -13,11 +12,11 @@ class Bomb(pygame.sprite.Sprite):
 		self.range = player.power
 		self.player = player
 		self.triggered = False
-	
+
 	def tick(self):
 		self.fuse -= 1
 		return self.fuse
-	
+
 	def explode(self):
 		# RFCT - add to player class instead? suggestions?
 		self.player.currentBomb += 1

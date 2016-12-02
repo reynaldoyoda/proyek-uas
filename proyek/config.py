@@ -5,8 +5,11 @@ class Config(object):
 	BRICK = 2
 	BOMB_UP = 3
 	POWER_UP = 4
-	LIFE_UP = 5
-	TIME_UP = 6
+	ARMOR = 5
+	LIFE_UP = 6
+	TIME_UP = 7
+	POWER_PLUS = 8
+	WALL_PASS = 9
 	FPS = 30
 	WIDTH = 840
 	HEIGHT = 690
